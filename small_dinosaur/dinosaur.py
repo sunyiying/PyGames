@@ -29,16 +29,18 @@ def mainGame():
             if event.type==QUIT:
                 exit()
             if event.type==KEYDOWN and event.type==K_SPACE:
-                if dinosaur.rect.y>dinosaur.lowest_y:
+                if dinosaur.rect.y>=dinosaur.lowest_y:
                     dinosaur.jump()
                     dinosaur.jump_audio.play()
+                    if over==True:
+                        mainGame()
             if over==False:
                 bg1.map_update()
                 bg1.map_rolling()
                 bg2.map_update()
                 bg2.map_rolling()
                 dinosaur.draw_dinosaur()
-            if addObstacleTimer >= 1300: 
+            if addObstacleTimer >= 1300:
                 r = random.randint(0, 100)
                 if r > 40:
                     obstacle = Obstacle()
@@ -47,6 +49,13 @@ def mainGame():
             for i in range(len(list)):
                 list[i].obstacle_move()
                 list[i].draw_obstacle()
+                if pygame.sprite.collide_rect(dinosaur,list[i]):
+                    over=True
+                    game_Over()
+                else:
+                    if (list[i].rect.x+list[i].rect.width)<dinosaur.rect.x:
+                        score+=list[i].getScore()
+                list[i].showScore(score)
 
 
         addObstacleTimer+=20
@@ -101,12 +110,12 @@ class Dinosaur():
 
     def move(self):
         if self.jumpState:
-            if self.rect.y>self.lowest_y:
+            if self.rect.y>=self.lowest_y:
                 self.jumpValue=-5
-            if self.rect.y<self.lowest_y-self.jumpHeight:
+            if self.rect.y<=self.lowest_y-self.jumpHeight:
                 self.jumpValue=5
             self.rect.y+=self.jumpValue
-            if self.rect.y>self.lowest_y:
+            if self.rect.y>=self.lowest_y:
                 self.jumpState=False
 
     def draw_dinosaur(self):
@@ -120,7 +129,7 @@ class Obstacle():
     score=1
     def __init__(self):
         self.rect=pygame.Rect(0,0,0,0)
-        self.stone=pygame.image.load("image/stone.pne").convert_alpha()
+        self.stone=pygame.image.load("image/stone.png").convert_alpha()
         self.cacti=pygame.image.load("image/cacti.png").convert_alpha()
 
         self.numbers=(
@@ -136,7 +145,7 @@ class Obstacle():
             pygame.image.load("image/9.png").convert_alpha(),
         )
         self.score_audio=pygame.mixer.Sound("audio/score.wav")
-        r=random.random(0,1)
+        r=random.randint(0,1)
         if r==0:
             self.image=self.stone
         else:
@@ -153,8 +162,33 @@ class Obstacle():
     def draw_obstacle(self):
         SCREEN.blit(self.image,(self.rect.x,self.rect.y))
 
+    def getScore(self):
+        self.score
+        tmp=self.score
+        if tmp==1:
+            self.score_audio.play()
+        self.score=0
+        return  tmp
 
+    def showScore(self,score):
+        self.scoreDigits=[int(x) for x in list(str(score))]
+        totalWidth=0
+        for digit in self.scoreDigits:
+            totalWidth+=self.numbers[digit].get_width()
 
+        Xoffset=(SCREENWIDTH-totalWidth)/2
+        for digit in self.scoreDigits:
+            SCREEN.blit(self.numbers[digit],(Xoffset,SCREENHEIGHT*0.1))
+            Xoffset+=self.numbers[digit].get_width()
+
+def game_Over():
+    bump_audio=pygame.mixer.Sound("audio/bump.wav")
+    bump_audio.play()
+    screen_w=pygame.display.Info().current_w
+    screen_h=pygame.display.Info().current_h
+
+    over_img =pygame.image.load("image/gameover.png").convert_alpha()
+    SCREEN.blit(over_img,((screen_w-over_img.get_width())/2,(screen_h-over_img.get_height())/2))
 
 
 
